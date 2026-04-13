@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Guess</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121213;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin: 20px 0;
+      font-size: 40px;
+      border-bottom: 1px solid #3a3a3c;
+      padding-bottom: 15px;
+      letter-spacing: 2px;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(5, 62px);
+      grid-template-rows: repeat(6, 62px);
+      gap: 6px;
+      justify-content: center;
+      margin: 30px auto 20px;
+    }
+
+    .tile {
+      width: 62px;
+      height: 62px;
+      border: 2px solid #3a3a3c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: bold;
+      text-transform: uppercase;
+      background-color: #121213;
+    }
+
+    .correct {
+      background-color: #538d4e;
+      border-color: #538d4e;
+      color: white;
+    }
+
+    .present {
+      background-color: #b59f3b;
+      border-color: #b59f3b;
+      color: white;
+    }
+
+    .absent {
+      background-color: #3a3a3c;
+      border-color: #3a3a3c;
+      color: white;
+    }
+
+    .filled {
+      border-color: #565758;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    input {
+      padding: 12px;
+      font-size: 18px;
+      width: 140px;
+      text-transform: uppercase;
+      text-align: center;
+      border: none;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 12px 16px;
+      font-size: 16px;
+      margin: 8px 4px 0;
+      border: none;
+      border-radius: 4px;
+      background-color: #818384;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-size: 18px;
+      min-height: 24px;
+    }
+
+    .back-link {
+      margin-top: 25px;
+    }
+
+    .back-link a {
+      color: #d7dadc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>WORD GUESS</h1>
+
+  <div id="board"></div>
+
+  <div class="controls">
+    <input type="text" id="guessInput" maxlength="5" placeholder="Enter word">
+    <button onclick="submitGuess()">Guess</button>
+    <button onclick="resetGame()">Play Again</button>
+  </div>
+
+  <div id="message"></div>
+
+  <div class="back-link">
+    <a href="index.html">Back to Home Page</a>
+  </div>
+
+  <script>
+    const wordList = [
+      "apple", "grape", "smile", "table", "chair", "bread", "plant", "stone", "light", "train",
+      "cloud", "dream", "heart", "water", "sweet", "house", "green", "brown", "sound", "beach"
+    ];
+
+    const board = document.getElementById("board");
+    const guessInput = document.getElementById("guessInput");
+    const message = document.getElementById("message");
+
+    let secretWord = "";
+    let currentRow = 0;
+    const maxRows = 6;
+    const cols = 5;
+
+    function createBoard() {
+      board.innerHTML = "";
+      for (let i = 0; i < maxRows * cols; i++) {
+        const tile = document.createElement("div");
+        tile.classList.add("tile");
+        board.appendChild(tile);
+      }
+    }
+
+    function pickNewWord() {
+      secretWord = wordList[Math.floor(Math.random() * wordList.length)];
+    }
+
+    function resetGame() {
+      currentRow = 0;
+      pickNewWord();
+      createBoard();
+      message.textContent = "";
+      guessInput.value = "";
+      guessInput.disabled = false;
+      guessInput.focus();
+    }
+
+    function submitGuess() {
+      const guess = guessInput.value.toLowerCase();
+
+      if (guess.length !== 5) {
+        message.textContent = "Please enter a 5-letter word.";
+        return;
+      }
+
+      if (currentRow >= maxRows) {
+        message.textContent = "Click Play Again to start over.";
+        return;
+      }
+
+      const rowStart = currentRow * cols;
+      const secretLetters = secretWord.split("");
+      const guessLetters = guess.split("");
+      const result = Array(5).fill("absent");
+
+      for (let i = 0; i < 5; i++) {
+        if (guessLetters[i] === secretLetters[i]) {
+          result[i] = "correct";
+          secretLetters[i] = null;
+          guessLetters[i] = null;
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        if (guessLetters[i] && secretLetters.includes(guessLetters[i])) {
+          result[i] = "present";
+          secretLetters[secretLetters.indexOf(guessLetters[i])] = null;
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const tile = board.children[rowStart + i];
+        tile.textContent = guess[i];
+        tile.classList.add("filled");
+        tile.classList.add(result[i]);
+      }
+
+      if (guess === secretWord) {
+        message.textContent = "You got it! Click Play Again to try another word.";
+        guessInput.disabled = true;
+        return;
+      }
+
+      currentRow++;
+
+      if (currentRow === maxRows) {
+        message.textContent = "The word was: " + secretWord.toUpperCase() + ". Click Play Again.";
+        guessInput.disabled = true;
+      } else {
+        message.textContent = "";
+      }
+
+      guessInput.value = "";
+      guessInput.focus();
+    }
+
+    guessInput.addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        submitGuess();
+      }
+    });
+
+    resetGame();
+  </script>
+
+</body>
+</html>
